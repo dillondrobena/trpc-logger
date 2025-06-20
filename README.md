@@ -199,14 +199,79 @@ const comprehensiveMiddleware = createComprehensiveMiddleware({
     enabled: true,
     logSlowQueries: true,
     slowQueryThreshold: 1000,
-    logMemoryUsage: false
+    logMemoryUsage: true
   },
   authLogging: true
 });
 
+// Apply comprehensive middleware
 const myProcedure = publicProcedure
   .withLogger('myProcedure')
   .use(comprehensiveMiddleware)
+  .input(z.object({ name: z.string() }))
+  .query(async ({ input, ctx }) => {
+    ctx.logger.info('Processing request', { input });
+    return { message: `Hello ${input.name}!` };
+  });
+```
+
+### Custom tRPC Middleware
+
+You can also create custom tRPC middleware that integrates with the logging system:
+
+```typescript
+import { t } from './trpc'; // Your tRPC instance
+
+const customLoggingMiddleware = t.middleware(async (opts) => {
+  const { ctx, next } = opts;
+  
+  // Ensure logger exists in context
+  if (!ctx.logger) {
+    throw new Error('Logger not found in context');
+  }
+
+  // Log request start
+  ctx.logger.info('Request started', {
+    procedure: opts.path,
+    requestId: ctx.requestId,
+    userId: ctx.userId
+  });
+
+  const startTime = Date.now();
+
+  try {
+    // Call next middleware/procedure
+    const result = await next();
+
+    const duration = Date.now() - startTime;
+
+    // Log successful response
+    ctx.logger.info('Request completed successfully', {
+      procedure: opts.path,
+      duration,
+      requestId: ctx.requestId
+    });
+
+    return result;
+  } catch (error) {
+    const duration = Date.now() - startTime;
+
+    // Log error
+    ctx.logger.error('Request failed', {
+      procedure: opts.path,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      duration,
+      requestId: ctx.requestId
+    });
+
+    throw error;
+  }
+});
+
+// Use custom middleware
+const myProcedure = publicProcedure
+  .withLogger('myProcedure')
+  .use(customLoggingMiddleware)
   .input(z.object({ name: z.string() }))
   .query(async ({ input, ctx }) => {
     ctx.logger.info('Processing request', { input });
@@ -310,31 +375,76 @@ Creates a performance monitor for tracking procedure execution.
 - `logger`: Logger instance
 - `config`: Performance configuration options
 
-#### `performanceMiddleware(logger, config)`
+#### `createPerformanceMiddleware(config)`
 
 Creates middleware for automatic performance monitoring.
 
+**Parameters:**
+- `config`: Optional configuration object for performance monitoring
+
+**Returns:** A tRPC middleware function that uses the logger from context
+
 ### Middleware
 
-#### `createLoggingMiddleware(logger, config)`
+#### `createLoggingMiddleware(config)`
 
 Creates middleware for automatic request/response logging.
 
-#### `createErrorHandlingMiddleware(logger, config)`
+**Parameters:**
+- `config`: Optional configuration object for logging behavior
+
+**Returns:** A tRPC middleware function that uses the logger from context
+
+#### `createErrorHandlingMiddleware(config)`
 
 Creates middleware for comprehensive error handling and logging.
 
-#### `createRateLimitingMiddleware(logger, config)`
+**Parameters:**
+- `config`: Optional configuration object for error handling behavior
+
+**Returns:** A tRPC middleware function that uses the logger from context
+
+#### `createRateLimitingMiddleware(config)`
 
 Creates middleware for rate limiting with logging.
 
-#### `createAuthLoggingMiddleware(logger)`
+**Parameters:**
+- `config`: Configuration object with rate limiting settings
+
+**Returns:** A tRPC middleware function that uses the logger from context
+
+#### `createAuthLoggingMiddleware()`
 
 Creates middleware for authentication logging.
+
+**Returns:** A tRPC middleware function that uses the logger from context
+
+#### `createPerformanceMiddleware(config)`
+
+Creates middleware for performance monitoring.
+
+**Parameters:**
+- `config`: Optional configuration object for performance monitoring
+
+**Returns:** A tRPC middleware function that uses the logger from context
+
+#### `createComprehensiveMiddleware(config)`
+
+Creates a comprehensive middleware that combines logging, error handling, rate limiting, and performance monitoring.
+
+**Parameters:**
+- `config`: Configuration object with all middleware settings
+
+**Returns:** A tRPC middleware function that uses the logger from context
 
 #### `combineMiddlewares(...middlewares)`
 
 Combines multiple middleware functions into a single middleware chain.
+
+**Parameters:**
+- `...middlewares`: Array of tRPC middleware functions
+
+**Returns:** A single tRPC middleware function
 
 ### Validation
 
