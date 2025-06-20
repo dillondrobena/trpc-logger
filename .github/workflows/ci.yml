@@ -8,9 +8,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: '18'
-      - uses: actions/setup-yarn@v3
-        with:
-          yarn-version: '1.22.19'
+          cache: 'yarn'
       - run: yarn install --frozen-lockfile
       - run: yarn build
       - run: yarn test
