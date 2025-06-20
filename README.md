@@ -99,7 +99,7 @@ ctx.logger.debug('This goes to debug file'); // Only debug-file pipeline
 
 Each pipeline can have the following properties:
 
-- **`name`** (required): A string identifier for the pipeline
+- **`name`** (optional): A string identifier for the pipeline
 - **`level`** (optional): The log level for this pipeline ('error', 'warn', 'info', 'debug')
 - **`format`** (optional): A function to format the log message
 - **`transport`** (required): A function that handles the actual logging
