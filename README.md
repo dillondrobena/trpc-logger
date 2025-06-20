@@ -1,5 +1,12 @@
 # trpc-logger
 
+[![CI](https://github.com/dillondrobena/trpc-logger/workflows/CI/badge.svg)](https://github.com/dillondrobena/trpc-logger/actions)
+[![npm version](https://badge.fury.io/js/trpc-logger.svg)](https://badge.fury.io/js/trpc-logger)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
+[![tRPC](https://img.shields.io/badge/tRPC-v11-orange.svg)](https://trpc.io/)
+[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
+
 A comprehensive tRPC extension that adds advanced logging capabilities to procedures with flexible pipeline system, performance monitoring, middleware support, and enterprise-grade features.
 
 > **Note:** This package is only compatible with tRPC v11.
