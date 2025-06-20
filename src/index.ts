@@ -58,7 +58,24 @@ export type ExtendedProcedureBuilder<
     >;
 };
 
-// Create a logged procedure with pipeline configurations
+/**
+ * Creates a logged procedure with pipeline configurations.
+ * 
+ * @param base - A tRPC ProcedureBuilder instance
+ * @param config - Pipeline configuration with logging pipelines
+ * @returns An ExtendedProcedureBuilder with logging capabilities
+ * 
+ * @example
+ * ```typescript
+ * const procedure = loggedProcedure(t.procedure, {
+ *   pipelines: [{
+ *     name: 'console',
+ *     level: 'info',
+ *     transport: (name, message, meta) => console.log(message, meta)
+ *   }]
+ * });
+ * ```
+ */
 export function loggedProcedure<
     TContext,
     TMeta,
@@ -146,7 +163,13 @@ export function loggedProcedure<
     });
 }
 
-// Default extension with no pipelines for backward compatibility
+/**
+ * Creates a procedure extension with no pipelines for backward compatibility.
+ * This is equivalent to calling loggedProcedure with an empty pipelines array.
+ * 
+ * @param base - A tRPC ProcedureBuilder instance
+ * @returns An ExtendedProcedureBuilder with empty logging configuration
+ */
 export function extendProcedure<
     TContext,
     TMeta,
@@ -179,3 +202,16 @@ export function extendProcedure<
 > {
     return loggedProcedure(base, { pipelines: [] });
 }
+
+// Re-export formats and transports for convenience
+export * from './formats';
+export * from './transports';
+
+// Re-export performance monitoring
+export * from './performance';
+
+// Re-export middleware
+export * from './middleware';
+
+// Re-export validation
+export * from './validation';

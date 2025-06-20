@@ -1,8 +1,19 @@
 # trpc-logger
 
-A tRPC extension that adds logging capabilities to procedures with a flexible pipeline system, inspired by Winston.
+A comprehensive tRPC extension that adds advanced logging capabilities to procedures with flexible pipeline system, performance monitoring, middleware support, and enterprise-grade features.
 
 > **Note:** This package is only compatible with tRPC v11.
+
+## Features
+
+- 🚀 **Flexible Pipeline System** - Configure multiple logging pipelines with different levels and transports
+- 📊 **Performance Monitoring** - Track procedure execution times, memory usage, and slow query detection
+- 🔧 **Middleware Support** - Automatic request/response logging, error handling, rate limiting, and authentication logging
+- ✅ **Configuration Validation** - Runtime validation of pipeline configurations with detailed error messages
+- 🌐 **Multiple Transports** - Console, file, HTTP, Winston, Pino, Sentry, Datadog, CloudWatch, Elasticsearch, Redis
+- 🛡️ **Enterprise Features** - Sensitive data masking, audit logging, comprehensive error handling
+- 📝 **Built-in Formats** - Timestamp and JSON formatting with custom format support
+- 🧪 **Comprehensive Testing** - Unit and integration tests with full coverage
 
 ## Installation
 
@@ -10,13 +21,14 @@ A tRPC extension that adds logging capabilities to procedures with a flexible pi
 npm install trpc-logger
 ```
 
-## Usage
+## Quick Start
 
 ### Basic Setup
 
 ```typescript
-import { loggedProcedure } from 'trpc-logger';
+import { loggedProcedure, type Logger } from 'trpc-logger';
 import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
 
 const t = initTRPC.context<{ logger?: Logger }>().create();
 
@@ -25,22 +37,13 @@ const loggerConfig = {
   pipelines: [
     {
       name: 'console',
-      level: 'info',
-      transport: (name, message, meta) => {
+      level: 'info' as const,
+      transport: (name: string | undefined, message: string, meta?: Record<string, any>) => {
         console.log(message, meta);
-      }
-    },
-    {
-      name: 'file',
-      level: 'debug',
-      format: (name, message, meta) => `[${new Date().toISOString()}] ${message}`,
-      transport: (name, message, meta) => {
-        // Write to file or external service
-        myLoggingService.log({ name, message, meta });
       }
     }
   ],
-  defaultLevel: 'info'
+  defaultLevel: 'info' as const
 };
 
 // Create your logged procedure
@@ -51,102 +54,234 @@ const myProcedure = procedure
   .withLogger('myProcedure')
   .input(z.object({ name: z.string() }))
   .query(async ({ input, ctx }) => {
-    // Use level-specific logging methods
     ctx.logger.info('Processing request', { input });
-    ctx.logger.debug('Input validation passed');
-    
-    if (someError) {
-      ctx.logger.error('Something went wrong', { error: someError });
-    }
-    
     return { message: `Hello ${input.name}!` };
   });
 ```
 
-### Level-Specific Logging
-
-The logger provides four level-specific methods:
-
-- `ctx.logger.error(message, meta?)` - For error messages
-- `ctx.logger.warn(message, meta?)` - For warning messages  
-- `ctx.logger.info(message, meta?)` - For informational messages
-- `ctx.logger.debug(message, meta?)` - For debug messages
-
-Only pipelines configured for the specific level will be called. For example:
+### Using Built-in Formats and Transports
 
 ```typescript
+import { 
+  loggedProcedure, 
+  timestampFormat, 
+  jsonFormat, 
+  consoleTransport, 
+  fileTransport,
+  type Logger 
+} from 'trpc-logger';
+import { initTRPC } from '@trpc/server';
+
+const t = initTRPC.context<{ logger?: Logger }>().create();
+
 const config = {
   pipelines: [
     {
       name: 'console',
-      level: 'info', // Only receives info, warn, and error logs
-      transport: (name, message, meta) => console.log(message)
+      level: 'info' as const,
+      format: timestampFormat,
+      transport: consoleTransport
     },
     {
-      name: 'debug-file',
-      level: 'debug', // Only receives debug logs
-      transport: (name, message, meta) => fs.appendFileSync('debug.log', message)
+      name: 'error-file',
+      level: 'error' as const,
+      format: jsonFormat,
+      transport: fileTransport('errors.log')
     }
   ]
 };
 
-// In your procedure:
-ctx.logger.info('This goes to console'); // Only console pipeline
-ctx.logger.debug('This goes to debug file'); // Only debug-file pipeline
+const procedure = loggedProcedure(t.procedure, config);
 ```
 
-### Pipeline Configuration
+## Advanced Features
 
-Each pipeline can have the following properties:
-
-- **`name`** (optional): A string identifier for the pipeline
-- **`level`** (optional): The log level for this pipeline ('error', 'warn', 'info', 'debug')
-- **`format`** (optional): A function to format the log message
-- **`transport`** (required): A function that handles the actual logging
-
-### Example Pipeline Configurations
+### Performance Monitoring
 
 ```typescript
-// Console logging for info and above
-const consolePipeline = {
-  name: 'console',
-  level: 'info',
-  transport: (name, message, meta) => {
-    console.log(message, meta);
-  }
+import { createPerformanceMonitor, type Logger } from 'trpc-logger';
+
+const performanceConfig = {
+  enabled: true,
+  logSlowQueries: true,
+  slowQueryThreshold: 1000, // 1 second
+  logMemoryUsage: true,
+  logInputOutput: false
 };
 
-// File logging for debug level
-const debugPipeline = {
-  name: 'debug-file',
-  level: 'debug',
-  format: (name, message, meta) => {
-    return `[${new Date().toISOString()}] [${name}] ${message}`;
+const monitor = createPerformanceMonitor(logger, performanceConfig);
+
+// In your procedure
+const metrics = monitor.start('user.procedure', input);
+try {
+  const result = await someOperation();
+  monitor.end(metrics, result);
+  return result;
+} catch (error) {
+  monitor.end(metrics, undefined, error);
+  throw error;
+}
+```
+
+### Middleware Support
+
+```typescript
+import { 
+  createLoggingMiddleware,
+  createErrorHandlingMiddleware,
+  createRateLimitingMiddleware,
+  createPerformanceMiddleware,
+  createComprehensiveMiddleware,
+  type Logger 
+} from 'trpc-logger';
+
+// Create individual middleware
+const loggingMiddleware = createLoggingMiddleware({
+  logRequests: true,
+  logResponses: true,
+  logErrors: true,
+  maskSensitiveFields: ['password', 'token']
+});
+
+const errorHandlingMiddleware = createErrorHandlingMiddleware({
+  logAllErrors: true,
+  includeStack: false
+});
+
+const rateLimitMiddleware = createRateLimitingMiddleware({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  maxRequests: 100
+});
+
+const performanceMiddleware = createPerformanceMiddleware({
+  enabled: true,
+  logSlowQueries: true,
+  slowQueryThreshold: 1000
+});
+
+// Use with your procedure
+const myProcedure = publicProcedure
+  .withLogger('myProcedure')
+  .use(loggingMiddleware)
+  .use(errorHandlingMiddleware)
+  .use(rateLimitMiddleware)
+  .use(performanceMiddleware)
+  .input(z.object({ name: z.string() }))
+  .query(async ({ input, ctx }) => {
+    ctx.logger.info('Processing request', { input });
+    return { message: `Hello ${input.name}!` };
+  });
+```
+
+### Comprehensive Middleware
+
+```typescript
+// Or use the comprehensive middleware for all features
+const comprehensiveMiddleware = createComprehensiveMiddleware({
+  logging: {
+    logRequests: true,
+    logResponses: true,
+    logErrors: true,
+    maskSensitiveFields: ['password', 'token']
   },
-  transport: (name, message, meta) => {
-    fs.appendFileSync('debug.log', message + '\n');
-  }
-};
+  errorHandling: {
+    logAllErrors: true,
+    logValidationErrors: true,
+    logAuthErrors: true,
+    includeStack: false
+  },
+  rateLimiting: {
+    windowMs: 15 * 60 * 1000,
+    maxRequests: 100,
+    keyGenerator: (opts) => opts.ctx?.userId || 'anonymous'
+  },
+  performance: {
+    enabled: true,
+    logSlowQueries: true,
+    slowQueryThreshold: 1000,
+    logMemoryUsage: false
+  },
+  authLogging: true
+});
 
-// Error logging to external service
-const errorPipeline = {
-  name: 'error-service',
-  level: 'error',
-  transport: (name, message, meta) => {
-    // Send to external logging service
-    externalLoggingService.log({
-      timestamp: new Date().toISOString(),
-      procedure: name,
-      message,
-      metadata: meta
-    });
-  }
+const myProcedure = publicProcedure
+  .withLogger('myProcedure')
+  .use(comprehensiveMiddleware)
+  .input(z.object({ name: z.string() }))
+  .query(async ({ input, ctx }) => {
+    ctx.logger.info('Processing request', { input });
+    return { message: `Hello ${input.name}!` };
+  });
+```
+
+### Configuration Validation
+
+```typescript
+import { validatePipelineConfig, createValidatedPipelineConfig } from 'trpc-logger';
+
+// Validate configuration
+const validation = validatePipelineConfig(config);
+if (!validation.isValid) {
+  console.error('Configuration errors:', validation.errors);
+}
+
+// Or use validated configuration (throws on invalid config)
+const validatedConfig = createValidatedPipelineConfig(config);
+const procedure = loggedProcedure(t.procedure, validatedConfig);
+```
+
+### Enterprise Transports
+
+```typescript
+import { 
+  winstonTransport,
+  pinoTransport,
+  httpTransport,
+  sentryTransport,
+  datadogTransport,
+  cloudWatchTransport,
+  elasticsearchTransport,
+  redisTransport
+} from 'trpc-logger';
+
+const config = {
+  pipelines: [
+    // Winston integration
+    {
+      name: 'winston',
+      level: 'info' as const,
+      transport: winstonTransport(winstonLogger)
+    },
+    // HTTP transport to external service
+    {
+      name: 'external-api',
+      level: 'error' as const,
+      transport: httpTransport('https://logs.company.com/api/logs', {
+        headers: { 'Authorization': 'Bearer token' },
+        timeout: 5000
+      })
+    },
+    // Sentry for error tracking
+    {
+      name: 'sentry',
+      level: 'error' as const,
+      transport: sentryTransport(sentry)
+    },
+    // CloudWatch for AWS monitoring
+    {
+      name: 'cloudwatch',
+      level: 'info' as const,
+      transport: cloudWatchTransport(cloudWatchLogs, 'log-group', 'log-stream')
+    }
+  ]
 };
 ```
 
 ## API Reference
 
-### `loggedProcedure(base, config)`
+### Core Functions
+
+#### `loggedProcedure(base, config)`
 
 Creates a logged procedure with the specified pipeline configurations.
 
@@ -156,7 +291,7 @@ Creates a logged procedure with the specified pipeline configurations.
 
 **Returns:** An `ExtendedProcedureBuilder` with a `withLogger` method
 
-### `withLogger(name)`
+#### `withLogger(name)`
 
 Adds a logger to the procedure context.
 
@@ -164,6 +299,74 @@ Adds a logger to the procedure context.
 - `name`: A string identifier for the procedure
 
 **Returns:** A new procedure builder with the logger in the context
+
+### Performance Monitoring
+
+#### `createPerformanceMonitor(logger, config)`
+
+Creates a performance monitor for tracking procedure execution.
+
+**Parameters:**
+- `logger`: Logger instance
+- `config`: Performance configuration options
+
+#### `performanceMiddleware(logger, config)`
+
+Creates middleware for automatic performance monitoring.
+
+### Middleware
+
+#### `createLoggingMiddleware(logger, config)`
+
+Creates middleware for automatic request/response logging.
+
+#### `createErrorHandlingMiddleware(logger, config)`
+
+Creates middleware for comprehensive error handling and logging.
+
+#### `createRateLimitingMiddleware(logger, config)`
+
+Creates middleware for rate limiting with logging.
+
+#### `createAuthLoggingMiddleware(logger)`
+
+Creates middleware for authentication logging.
+
+#### `combineMiddlewares(...middlewares)`
+
+Combines multiple middleware functions into a single middleware chain.
+
+### Validation
+
+#### `validatePipelineConfig(config)`
+
+Validates pipeline configuration and returns validation results.
+
+#### `createValidatedPipelineConfig(config)`
+
+Creates a validated pipeline configuration (throws on invalid config).
+
+### Built-in Formats
+
+- `timestampFormat`: Adds timestamp to log messages
+- `jsonFormat`: Formats messages as JSON
+
+### Built-in Transports
+
+#### Basic Transports
+- `consoleTransport`: Logs to console
+- `fileTransport(filename)`: Logs to a file
+- `jsonTransport`: Logs JSON to console
+
+#### Enterprise Transports
+- `winstonTransport(winstonLogger)`: Winston integration
+- `pinoTransport(pinoLogger)`: Pino integration
+- `httpTransport(url, options)`: HTTP transport to external services
+- `sentryTransport(sentry)`: Sentry error tracking
+- `datadogTransport(datadogLogger)`: Datadog integration
+- `cloudWatchTransport(cloudWatchLogs, logGroup, logStream)`: AWS CloudWatch
+- `elasticsearchTransport(client, index)`: Elasticsearch integration
+- `redisTransport(redisClient, key, ttl)`: Redis log aggregation
 
 ## Types
 
@@ -182,7 +385,7 @@ interface Logger {
 
 ```typescript
 interface LoggerPipeline {
-  name?: string;
+  name: string;
   level?: 'error' | 'warn' | 'info' | 'debug';
   format?: (name: string | undefined, message: string, meta?: Record<string, any>) => string;
   transport: (name: string | undefined, message: string, meta?: Record<string, any>) => void;
@@ -198,14 +401,48 @@ interface PipelineConfig {
 }
 ```
 
-### `ExtendedProcedureBuilder`
+### `PerformanceConfig`
 
-An extended version of tRPC's `ProcedureBuilder` that includes the `withLogger` method.
+```typescript
+interface PerformanceConfig {
+  enabled: boolean;
+  logSlowQueries: boolean;
+  slowQueryThreshold: number;
+  logMemoryUsage: boolean;
+  logInputOutput: boolean;
+}
+```
 
-## Compatibility
+## Examples
 
-This package is only compatible with **tRPC v11**. For older versions of tRPC, please feel free to contribute fixes!
+See the `examples/` directory for comprehensive examples:
+
+- `basic-usage.ts` - Basic setup and usage
+- `advanced-usage.ts` - Advanced features and multiple pipelines
+- `enterprise-usage.ts` - Enterprise-level implementation with all features
+- `middleware-usage.ts` - Complete middleware integration examples
+
+## Testing
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage
+npm run test -- --coverage
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-MIT 
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 
