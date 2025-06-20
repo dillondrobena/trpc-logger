@@ -182,7 +182,7 @@ interface Logger {
 
 ```typescript
 interface LoggerPipeline {
-  name: string;
+  name?: string;
   level?: 'error' | 'warn' | 'info' | 'debug';
   format?: (name: string | undefined, message: string, meta?: Record<string, any>) => string;
   transport: (name: string | undefined, message: string, meta?: Record<string, any>) => void;
@@ -204,7 +204,7 @@ An extended version of tRPC's `ProcedureBuilder` that includes the `withLogger` 
 
 ## Compatibility
 
-This package is only compatible with **tRPC v11**. For older versions of tRPC, please use a compatible version of this package.
+This package is only compatible with **tRPC v11**. For older versions of tRPC, please feel free to contribute fixes!
 
 ## License
 
