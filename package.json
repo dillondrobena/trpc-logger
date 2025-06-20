@@ -1,0 +1,41 @@
+{
+  "name": "trpc-logger",
+  "version": "1.0.0",
+  "description": "A tRPC extension that adds logging capabilities to procedures",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "trpc",
+    "logger",
+    "typescript",
+    "middleware",
+    "logging"
+  ],
+  "author": "Dillon Drobena",
+  "license": "MIT",
+  "peerDependencies": {
+    "@trpc/server": "^11.0.0"
+  },
+  "devDependencies": {
+    "@trpc/server": "^11.0.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/trpc-logger.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/trpc-logger/issues"
+  },
+  "homepage": "https://github.com/yourusername/trpc-logger#readme"
+} 
