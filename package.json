@@ -32,10 +32,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yourusername/trpc-logger.git"
+    "url": "git+https://github.com/dillondrobena/trpc-logger.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/trpc-logger/issues"
+    "url": "https://github.com/dillondrobena/trpc-logger/issues"
   },
-  "homepage": "https://github.com/yourusername/trpc-logger#readme"
+  "homepage": "https://github.com/dillondrobena/trpc-logger#readme"
 } 
